@@ -60,19 +60,16 @@ int main(int argc, char *argv[]){
             eth = (struct ethhdr *)buffer;
 
             //escritura en el fichero
-            if(eth->h_proto== 8){
+            if(htons(eth->h_proto)== 0x0800){
                 fprintf(fichero, "%02X.%02x.%02x.%02x.%02x.%02x\t",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
                 fprintf(fichero, "%02x.%02x.%02x.%02x.%02x.%02x\t",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
-                fprintf(fichero,"%x\n",eth->h_proto);
+                fprintf(fichero,"%x\n",htons(eth->h_proto));
             }else{
                 fprintf(fichero2, "%02x.%02x.%02x.%02x.%02x.%02x\t",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
                 fprintf(fichero2, "%02x.%02x.%02x.%02x.%02x.%02x\t",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
-                fprintf(fichero2,"%x\n",eth->h_proto);
+                fprintf(fichero2,"%x\n",htons(eth->h_proto));
             }
         }
-        
-
-        printf("%05x\n",size_trama);
 
         /*debo cerrar los sockets y archivos*/
         fclose(fichero);
