@@ -26,8 +26,11 @@ int main(int argc, char *argv[]){
         struct sockaddr server;
         int sock_size = sizeof(server);
         /*variables para el archivo*/
-        FILE *fichero;
+        FILE *fichero,*fichero2;
         fichero=fopen("sniffer.log","w");
+        fichero2=fopen("sniffer2.log","w");
+        /*otras variables*/
+        int total_paquetes = atoi(argv[2]);
         
         /*creacion del socket IPPROTO_TCP solo campura paquetes del protocolo TCP obvi*/
         //if((sock_fd = socket(PF_INET , SOCK_RAW , IPPROTO_TCP)) < 0){
@@ -46,22 +49,35 @@ int main(int argc, char *argv[]){
         ethreq.ifr_flags |= IFF_PROMISC;
         ioctl(sock_fd,SIOCSIFFLAGS,&ethreq);
 
-        /*captura de la trama*/
-        size_trama = recvfrom(sock_fd,(char *)buffer, MAX_LINES, 0, (struct sockaddr *)&server, &sock_size);
+        fprintf(fichero,"ip destino\tip origen\t protocolo\n");
+        for(int i=0; i<total_paquetes; i++){
+            /*captura de la trama*/
+            size_trama = recvfrom(sock_fd,(char *)buffer, MAX_LINES, 0, (struct sockaddr *)&server, &sock_size);
+            if(size_trama<0){
+                printf("error al recibir informacion\n");
+                exit(-1);
+            }
+            eth = (struct ethhdr *)buffer;
 
-        //escritura en el fichero
-        fprintf(fichero, "%s\n",buffer);
-        fclose(fichero);
-
-        if(size_trama<0){
-            printf("error al recibir informacion\n");
-            exit(-1);
+            //escritura en el fichero
+            if(eth->h_proto== 8){
+                fprintf(fichero, "%02X.%02x.%02x.%02x.%02x.%02x\t",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
+                fprintf(fichero, "%02x.%02x.%02x.%02x.%02x.%02x\t",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
+                fprintf(fichero,"%x\n",eth->h_proto);
+            }else{
+                fprintf(fichero2, "%02x.%02x.%02x.%02x.%02x.%02x\t",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
+                fprintf(fichero2, "%02x.%02x.%02x.%02x.%02x.%02x\t",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
+                fprintf(fichero2,"%x\n",eth->h_proto);
+            }
         }
+        
 
-        printf("%d\n",size_trama);
+        printf("%05x\n",size_trama);
 
-        /*debo cerrar los sockets*/
-        close(sock_fd);
+        /*debo cerrar los sockets y archivos*/
+        fclose(fichero);
+        fclose(fichero2);
+        //close(sock_fd);
 
         system("sudo /sbin/ifconfig eth0 -promisc");
     }else{
