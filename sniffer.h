@@ -6,6 +6,10 @@
 #include <netinet/in.h>
 #include <linux/if_ether.h>
 #include<pthread.h>
+#include<sys/stat.h>
+#include<fcntl.h>
+#include<unistd.h>
+#include<stdlib.h>
 #include "snoopy.h"
 
 /*el tamaño maximo de la trama ethernet es 1518 bytes
@@ -14,10 +18,18 @@ dejo este valor nomas por que si*/
 
 void *sniffer(void *datos){
     struct parametros *param;
+    int tuberia;
+    mkfifo("/tmp/mi_fifo",0666);
+    
+    tuberia=open("/tmp/mi_fifo",O_WRONLY);
 
     param = (struct parametros *)datos;
 
+    write(tuberia, &param, sizeof(struct parametros *));
+
     printf("hola soy el sniffer %s %d\n",param->interfaz,param->n_paquetes);
+
+    close(tuberia);
     pthread_exit(0);
 }
 // int main(int argc, char *argv[]){
@@ -49,11 +61,9 @@ void *sniffer(void *datos){
 
 //         //system("/sbin/ifconfig eth0 promisc");
 //         strncpy(ethreq.ifr_name,argv[1],IFNAMSIZ);
-
 //         ioctl(sock_fd,SIOCGIFFLAGS,&ethreq);
 //         ethreq.ifr_flags |= IFF_PROMISC;
 //         ioctl(sock_fd,SIOCSIFFLAGS,&ethreq);
-
 //         fprintf(fichero,"ip destino\tip origen\t protocolo\n");
 //         for(int i=0; i<total_paquetes; i++){
 //             /*captura de la trama*/
@@ -63,7 +73,6 @@ void *sniffer(void *datos){
 //                 exit(-1);
 //             }
 //             eth = (struct ethhdr *)buffer;
-
 //             //escritura en el fichero
 //             if(htons(eth->h_proto)== 0x0800){
 //                 fprintf(fichero, "%02X.%02x.%02x.%02x.%02x.%02x\t",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
@@ -75,12 +84,10 @@ void *sniffer(void *datos){
 //                 fprintf(fichero2,"%x\n",htons(eth->h_proto));
 //             }
 //         }
-
 //         /*debo cerrar los sockets y archivos*/
 //         fclose(fichero);
 //         fclose(fichero2);
 //         //close(sock_fd);
-
 //         system("sudo /sbin/ifconfig eth0 -promisc");
 //     
 // }

@@ -11,7 +11,7 @@ int main(int argc, char *argv[]){
 
         param.interfaz=argv[1];
         param.n_paquetes=atoi(argv[2]);
-
+        
         pthread_create(&id_sniffer, NULL, sniffer, (void *)&param);
         pthread_create(&id_proc_dat, NULL, procesar_datos, NULL);
 
