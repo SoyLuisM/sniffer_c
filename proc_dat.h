@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include "snoopy.h"
 void *procesar_datos(void *datos){
     int tuberia, long_dat;
 
