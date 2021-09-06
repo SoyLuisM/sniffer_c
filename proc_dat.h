@@ -66,11 +66,11 @@ struct n_mac *contar_en_lista(struct ethhdr *eth, struct n_mac *lista){
     }
 }
 
-void mostrar_lista(struct n_mac *lista){
-    printf("Direccion origen\tpaquetes\n");
+void guardar_lista(FILE *archivo,struct n_mac *lista){
+    fprintf(archivo,"\n\nDireccion origen\tpaquetes\n");
     for(struct n_mac *actual= lista; actual!=NULL;actual=actual->sig){
-        printf("%x.%x.%x.%x.%x.%x\t",actual->mac_origen[0],actual->mac_origen[1],actual->mac_origen[2],actual->mac_origen[3],actual->mac_origen[4],actual->mac_origen[5]);
-        printf("%d\n",actual->cont);
+        fprintf(archivo,"%x.%x.%x.%x.%x.%x\t\t",actual->mac_origen[0],actual->mac_origen[1],actual->mac_origen[2],actual->mac_origen[3],actual->mac_origen[4],actual->mac_origen[5]);
+        fprintf(archivo,"\t%d\n",actual->cont);
     }
 }
 
@@ -139,13 +139,14 @@ void *procesar_datos(void *datos){
     close(fichero3);
     close(fichero4);
 
-    mostrar_lista(lista);
     /*escribo el fichero de resultados*/
     fichero5=fopen("sniffer_resultados.log","w");
     fprintf(fichero5,"\t\t\tResultados del analizis\n\n\n");
     fprintf(fichero5,"Total de paquetes: %d Total Ethernet II: %d Total IEEE 802.3: %d\t\n\n",param->n_paquetes, analizados,descartados);
     fprintf(fichero5,"Descripción de los paquetes analizados:\n");
     fprintf(fichero5,"Paquetes IPv4: %d\tPaquetes IPv6: %d\tPaquetes ARP: %d\n",IPv4,IPv6,ARP);
+
+    guardar_lista(fichero5,lista);
 
     close(fichero5);
     pthread_exit(0);
