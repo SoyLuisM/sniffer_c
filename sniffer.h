@@ -12,13 +12,12 @@
 #include<stdlib.h>
 #include "snoopy.h"
 
-int sock_fd;
-struct ifreq ethreq;
+void modo_promiscuo(int sock_fd,char *interfaz, int accion){
+    struct ifreq ethreq;
 
-void modo_promiscuo(char *interfaz, int accion){
     strncpy(ethreq.ifr_name,interfaz,IFNAMSIZ);
     ioctl(sock_fd,SIOCGIFFLAGS,&ethreq);
-    
+
     if(accion==1){
         ethreq.ifr_flags = (ethreq.ifr_flags | IFF_PROMISC);
     }else if(accion==0){
@@ -35,6 +34,7 @@ void modo_promiscuo(char *interfaz, int accion){
 void *sniffer(void *datos){
     struct parametros *param;
     int tuberia;
+    int sock_fd;
     param = (struct parametros *)datos;
 
     /*variables para el socket*/
@@ -61,8 +61,7 @@ void *sniffer(void *datos){
     }
 
      /*configuracion de la targeta en modo promiscuo*/
-    //system("/sbin/ifconfig eth0 promisc");
-    modo_promiscuo(param->interfaz,1);
+    modo_promiscuo(sock_fd,param->interfaz,1);
 
     /*este ciclo captura los paquetes*/
     for(int i=0; i<param->n_paquetes; i++){
@@ -77,9 +76,8 @@ void *sniffer(void *datos){
     }
     //close(sock_fd);
     /*desactivando modo promiscuo*/
-    modo_promiscuo(param->interfaz,0);
+    modo_promiscuo(sock_fd,param->interfaz,0);
 
-    //system("sudo /sbin/ifconfig eth0 -promisc");
     close(tuberia);
     pthread_exit(0);
 }
