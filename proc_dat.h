@@ -7,15 +7,24 @@
 #include <linux/if_ether.h>
 
 void guardar_trama(FILE *fichero,struct ethhdr *eth,int long_dat){
+    /*imprime mac destino*/
     fprintf(fichero,"%02X.%02x.%02x.%02x.%02x.%02x\t",eth->h_dest[0],eth->h_dest[1],eth->h_dest[2],eth->h_dest[3],eth->h_dest[4],eth->h_dest[5]);
+    /*imprime mac origen*/
     fprintf(fichero,"%02x.%02x.%02x.%02x.%02x.%02x\t",eth->h_source[0],eth->h_source[1],eth->h_source[2],eth->h_source[3],eth->h_source[4],eth->h_source[5]);
+    /*imprime protocolo*/
     fprintf(fichero,"%x\t\t\t",htons(eth->h_proto));
-    fprintf(fichero,"%d\t\t",long_dat);
-    fprintf(fichero,"%d\n",(long_dat-(sizeof(&eth->h_dest)*6)-(sizeof(&eth->h_source)*6)-sizeof(&eth->h_proto)));
+    /*imprime longitud de la trama*/
+    fprintf(fichero,"%d\t\t\t",long_dat);
+    /*imprime carga util*/
+    fprintf(fichero,"%d\n",(long_dat-sizeof(eth->h_dest)-sizeof(eth->h_dest)-sizeof(eth->h_proto)));
 }
+
+/*imprime las cabeceras de los logs*/
 void guardar_cabezera(FILE *fichero){
     fprintf(fichero,"MAC destino\t\t\tMAC origen\t\t\tprotocolo\tlong trama\tcarga util\n");
 }
+
+/*funcion principal del procesador de datos*/
 void *procesar_datos(void *datos){
     FILE *fichero,*fichero2,*fichero3,*fichero4,*fichero5;
     fichero=fopen("sniffer_IPv4.log","w");
@@ -23,10 +32,12 @@ void *procesar_datos(void *datos){
     fichero3=fopen("sniffer_ARP.log","w");
     fichero4=fopen("sniffer_descartados.log","w");
 
+    /*descartados es la cnatidad de tramas IEEE, analizados Ethernet 2*/
     int IPv4=0, IPv6=0, ARP=0, descartados=0,analizados=0;
 
     struct parametros *param;
-    int tuberia, long_dat;
+    /*long_dat es la trama leida de la tuberia, size_trama el tamaño de la trama en revfrom*/
+    int tuberia, long_dat,size_trama;
     struct ethhdr *eth;
     char buffer[MAX_LINES];
     tuberia = open("/tmp/mi_fifo",O_RDONLY);
@@ -39,7 +50,12 @@ void *procesar_datos(void *datos){
     guardar_cabezera(fichero4);
 
     for(int i = 0; i<param->n_paquetes;i++ ){
-        long_dat=read(tuberia, buffer, MAX_LINES);
+        /*primero leo la longitud de la trama*/
+        long_dat=read(tuberia, &size_trama, sizeof(size_trama));
+        printf("lei %d datos %d\n",long_dat,size_trama);
+
+        /*leo la trama y convierto al tipo necesario*/
+        long_dat=read(tuberia, &buffer, size_trama);
         eth = (struct ethhdr *)buffer;
         //IPv4
         if(htons(eth->h_proto) ==0x0800){
@@ -62,13 +78,14 @@ void *procesar_datos(void *datos){
             guardar_trama(fichero4,eth,long_dat);
         }
     }
-
+    /*cierre de ficheros no necesarios*/
     close(tuberia);
     close(fichero);
     close(fichero2);
     close(fichero3);
     close(fichero4);
 
+    /*escribo el fichero de resultados*/
     fichero5=fopen("sniffer_resultados.log","w");
     fprintf(fichero5,"\t\t\tResultados del analizis\n\n\n");
     fprintf(fichero5,"Total de paquetes: %d Total Ethernet II: %d Total IEEE 802.3: %d\t\n\n",param->n_paquetes, analizados,descartados);
