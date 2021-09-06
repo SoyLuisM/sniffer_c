@@ -48,6 +48,24 @@ struct n_mac *agregar_lista(struct ethhdr *eth, struct n_mac *lista){
     }
 }
 
+struct n_mac *contar_en_lista(struct ethhdr *eth, struct n_mac *lista){
+    if(lista==NULL){
+        lista=agregar_lista(eth,lista);
+        return lista;
+    }else{
+        for(struct n_mac *actual= lista; actual!=NULL;actual=actual->sig){
+            /*si la direccion mac de actual es igual a la de eth->h_sourse*/
+            if(((eth->h_source[0]== actual->mac_origen[0] && eth->h_source[1]== actual->mac_origen[1]) && (eth->h_source[2]== actual->mac_origen[2] && eth->h_source[3]== actual->mac_origen[3])) && (eth->h_source[4]== actual->mac_origen[4] && eth->h_source[5]== actual->mac_origen[5])){
+                actual->cont++;
+                return lista;
+            }else if(actual->sig==NULL){
+                struct n_mac *nuevo=agregar_lista(eth,lista);
+                return nuevo;
+            }
+        }
+    }
+}
+
 void mostrar_lista(struct n_mac *lista){
     printf("Direccion origen\tpaquetes\n");
     for(struct n_mac *actual= lista; actual!=NULL;actual=actual->sig){
@@ -95,23 +113,24 @@ void *procesar_datos(void *datos){
             IPv4++;
             analizados++;
             guardar_trama(fichero,eth,long_dat);
+            lista=contar_en_lista(eth,lista);
         }//IPv6
         else if(htons(eth->h_proto) ==0x86DD){
             IPv6++;
             analizados++;
             guardar_trama(fichero2,eth,long_dat);
+            lista=contar_en_lista(eth,lista);
         }//ARP
         else if(htons(eth->h_proto) ==0x0806){
             ARP++;
             analizados++;
             guardar_trama(fichero3,eth,long_dat);
+            lista=contar_en_lista(eth,lista);
         }//descartados
         else{
             descartados++;
             guardar_trama(fichero4,eth,long_dat);
         }
-        
-        lista=agregar_lista(eth,lista);
     }
     /*cierre de ficheros no necesarios*/
     close(tuberia);
