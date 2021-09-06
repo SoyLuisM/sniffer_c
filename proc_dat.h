@@ -38,6 +38,16 @@ struct n_mac *crear_nodo(struct ethhdr *eth){
     return nuevo;
 }
 
+struct n_mac *agregar_lista(struct ethhdr *eth, struct n_mac *lista){
+    struct n_mac *nuevo=crear_nodo(eth);
+    if(lista==NULL){
+        return nuevo;
+    }else{
+        nuevo->sig = lista;
+        return nuevo;
+    }
+}
+
 void mostrar_lista(struct n_mac *lista){
     printf("Direccion origen\tpaquetes\n");
     for(struct n_mac *actual= lista; actual!=NULL;actual=actual->sig){
@@ -101,7 +111,7 @@ void *procesar_datos(void *datos){
             guardar_trama(fichero4,eth,long_dat);
         }
         
-        lista=crear_nodo(eth);
+        lista=agregar_lista(eth,lista);
     }
     /*cierre de ficheros no necesarios*/
     close(tuberia);
