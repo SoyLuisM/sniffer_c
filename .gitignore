@@ -1,6 +1,7 @@
-sniffer
-sniffer.log
-sniffer2.log
-sniffer3.log
+sniffer_ARP.log
+sniffer_descartados.log
+sniffer_IPv4.log
+sniffer_IPv6.log
+sniffer_resultados.log
 .vscode/
 main
