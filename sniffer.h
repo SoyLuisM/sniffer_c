@@ -12,17 +12,37 @@
 #include<stdlib.h>
 #include "snoopy.h"
 
+int sock_fd;
+struct ifreq ethreq;
+
+void modo_promiscuo(char *interfaz, int accion){
+    strncpy(ethreq.ifr_name,interfaz,IFNAMSIZ);
+    ioctl(sock_fd,SIOCGIFFLAGS,&ethreq);
+    
+    if(accion==1){
+        ethreq.ifr_flags = (ethreq.ifr_flags | IFF_PROMISC);
+    }else if(accion==0){
+        ethreq.ifr_flags = ethreq.ifr_flags & ~IFF_PROMISC;
+    }else{
+        printf("ocurrio un error\n");
+    }
+
+    if(ioctl(sock_fd,SIOCSIFFLAGS,&ethreq)){
+        printf("error al activar/desactivar modo promiscuo\n");
+    }
+}
+
 void *sniffer(void *datos){
     struct parametros *param;
     int tuberia;
     param = (struct parametros *)datos;
 
     /*variables para el socket*/
-    int sock_fd;
+    
     char buffer[MAX_LINES];
     int size_trama;
     struct ethhdr *eth;
-    struct ifreq ethreq;
+    
     struct sockaddr server;
     int sock_size = sizeof(server);
 
@@ -35,7 +55,6 @@ void *sniffer(void *datos){
 
     /*creacion del socket IPPROTO_TCP solo campura paquetes del protocolo TCP obvi*/
     //if((sock_fd = socket(PF_INET , SOCK_RAW , IPPROTO_TCP)) < 0){
-    //if((sock_fd = socket(PF_INET , SOCK_RAW , ETH_P_ALL)) < 0){
     if((sock_fd = socket(PF_PACKET , SOCK_RAW , htons(ETH_P_ALL))) < 0){
         printf("error al crear el socket\n");
         exit(-1);
@@ -43,10 +62,7 @@ void *sniffer(void *datos){
 
      /*configuracion de la targeta en modo promiscuo*/
     //system("/sbin/ifconfig eth0 promisc");
-    strncpy(ethreq.ifr_name,param->interfaz,IFNAMSIZ);
-    ioctl(sock_fd,SIOCGIFFLAGS,&ethreq);
-    ethreq.ifr_flags |= IFF_PROMISC;
-    ioctl(sock_fd,SIOCSIFFLAGS,&ethreq);
+    modo_promiscuo(param->interfaz,1);
 
     /*este ciclo captura los paquetes*/
     for(int i=0; i<param->n_paquetes; i++){
@@ -59,9 +75,11 @@ void *sniffer(void *datos){
         /*escrituta en el socket*/
         write(tuberia, buffer, MAX_LINES);
     }
-    printf("bandera\n");
     //close(sock_fd);
-    system("sudo /sbin/ifconfig eth0 -promisc");
+    /*desactivando modo promiscuo*/
+    modo_promiscuo(param->interfaz,0);
+
+    //system("sudo /sbin/ifconfig eth0 -promisc");
     close(tuberia);
     pthread_exit(0);
 }

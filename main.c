@@ -20,7 +20,7 @@ int main(int argc, char *argv[]){
         
     }else{
         printf("Error en los parametros sintaxis\n");
-        printf("./main Interfaz Num_paquetes\n");
+        printf("sudo ./main Interfaz Num_paquetes\n");
     }
     return 1;
 }
