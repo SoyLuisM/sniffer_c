@@ -24,8 +24,32 @@ void guardar_cabezera(FILE *fichero){
     fprintf(fichero,"MAC destino\t\t\tMAC origen\t\t\tprotocolo\tlong trama\tcarga util\n");
 }
 
+/**/
+struct n_mac *crear_nodo(struct ethhdr *eth){
+    struct n_mac *nuevo= (struct n_mac *)malloc(sizeof(struct n_mac));
+    nuevo->mac_origen[0]=eth->h_source[0];
+    nuevo->mac_origen[1]=eth->h_source[1];
+    nuevo->mac_origen[2]=eth->h_source[2];
+    nuevo->mac_origen[3]=eth->h_source[3];
+    nuevo->mac_origen[4]=eth->h_source[4];
+    nuevo->mac_origen[5]=eth->h_source[5];
+    nuevo->cont=1;
+    nuevo->sig=NULL;
+    return nuevo;
+}
+
+void mostrar_lista(struct n_mac *lista){
+    printf("Direccion origen\tpaquetes\n");
+    for(struct n_mac *actual= lista; actual!=NULL;actual=actual->sig){
+        printf("%x.%x.%x.%x.%x.%x\t",actual->mac_origen[0],actual->mac_origen[1],actual->mac_origen[2],actual->mac_origen[3],actual->mac_origen[4],actual->mac_origen[5]);
+        printf("%d\n",actual->cont);
+    }
+}
+
 /*funcion principal del procesador de datos*/
 void *procesar_datos(void *datos){
+    struct n_mac *lista=NULL;
+
     FILE *fichero,*fichero2,*fichero3,*fichero4,*fichero5;
     fichero=fopen("sniffer_IPv4.log","w");
     fichero2=fopen("sniffer_IPv6.log","w");
@@ -52,7 +76,6 @@ void *procesar_datos(void *datos){
     for(int i = 0; i<param->n_paquetes;i++ ){
         /*primero leo la longitud de la trama*/
         long_dat=read(tuberia, &size_trama, sizeof(size_trama));
-        printf("lei %d datos %d\n",long_dat,size_trama);
 
         /*leo la trama y convierto al tipo necesario*/
         long_dat=read(tuberia, &buffer, size_trama);
@@ -77,6 +100,8 @@ void *procesar_datos(void *datos){
             descartados++;
             guardar_trama(fichero4,eth,long_dat);
         }
+        
+        lista=crear_nodo(eth);
     }
     /*cierre de ficheros no necesarios*/
     close(tuberia);
@@ -85,6 +110,7 @@ void *procesar_datos(void *datos){
     close(fichero3);
     close(fichero4);
 
+    mostrar_lista(lista);
     /*escribo el fichero de resultados*/
     fichero5=fopen("sniffer_resultados.log","w");
     fprintf(fichero5,"\t\t\tResultados del analizis\n\n\n");

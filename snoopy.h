@@ -9,8 +9,9 @@ dejo este valor nomas por que si*/
 #define MAX_LINES 65536 
 
 struct n_mac{
-    char *mac;
+    char mac_origen[6];
     int cont;
+    struct n_mac *sig;
 };
 //#include  ″snoopy.c″
 #endif

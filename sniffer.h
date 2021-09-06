@@ -67,7 +67,6 @@ void *sniffer(void *datos){
     for(int i=0; i<param->n_paquetes; i++){
         /*captura de la trama*/
         size_trama = recvfrom(sock_fd,(char *)buffer, MAX_LINES, 0, (struct sockaddr *)&server, &sock_size);
-        printf("recivi %d datos\n", size_trama);
         if(size_trama<0){
             printf("error al recibir informacion\n");
             exit(-1);
