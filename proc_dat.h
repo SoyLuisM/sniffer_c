@@ -9,6 +9,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <pthread.h>
 
 void guardar_trama(FILE *fichero,struct ethhdr *eth,int long_dat){
     /*imprime mac destino*/
@@ -81,8 +82,9 @@ void guardar_lista(FILE *archivo,struct n_mac *lista){
 
 /*funcion principal del procesador de datos*/
 void *procesar_datos(void *datos){
-    struct sockaddr_in source,dest;
     struct n_mac *lista=NULL;
+
+    mkfifo("/tmp/mi_fifo_IPv4",0666);
 
     FILE *fichero,*fichero2,*fichero3,*fichero4,*fichero5;
     fichero=fopen("sniffer_IPv4.log","w");
@@ -95,10 +97,11 @@ void *procesar_datos(void *datos){
 
     struct parametros *param;
     /*long_dat es la trama leida de la tuberia, size_trama el tamaño de la trama en revfrom*/
-    int tuberia, long_dat,size_trama;
+    int tuberia,tuberia_IPv4, long_dat,size_trama;
     struct ethhdr *eth;
-    struct iphdr *eth2;
     char buffer[MAX_LINES];
+    
+    tuberia_IPv4=open("/tmp/mi_fifo_IPv4",O_WRONLY);
     tuberia = open("/tmp/mi_fifo",O_RDONLY);
 
     long_dat=read(tuberia, &param, sizeof(struct parametros *));
@@ -115,16 +118,14 @@ void *procesar_datos(void *datos){
         /*leo la trama y convierto al tipo necesario*/
         long_dat=read(tuberia, &buffer, size_trama);
         eth = (struct ethhdr *)buffer;
-        eth2 = (struct iphdr *)(buffer+(sizeof(struct ethhdr)));
-
-        source.sin_addr.s_addr = eth2->saddr;
-        dest.sin_addr.s_addr = eth2->daddr;
-        printf("%s\t",inet_ntoa(dest.sin_addr));
-        printf("%s\n",inet_ntoa(source.sin_addr));
+        
         //IPv4
         if(htons(eth->h_proto) ==0x0800){
             IPv4++;
             analizados++;
+            write(tuberia_IPv4, &size_trama, sizeof(size_trama));
+            write(tuberia_IPv4, &buffer, size_trama);
+
             guardar_trama(fichero,eth,long_dat);
             lista=contar_en_lista(eth,lista);
         }//IPv6
@@ -151,7 +152,8 @@ void *procesar_datos(void *datos){
     close(fichero2);
     close(fichero3);
     close(fichero4);
-
+    size_trama=-1;
+    write(tuberia_IPv4, &size_trama, sizeof(size_trama));
     /*escribo el fichero de resultados*/
     fichero5=fopen("sniffer_resultados.log","w");
     fprintf(fichero5,"\t\t\tResultados del analizis\n\n\n");
