@@ -5,3 +5,11 @@ sniffer_IPv6.log
 sniffer_resultados.log
 .vscode/
 main
+IPv4_icmpv4.log
+IPv4_igmp.log
+IPv4_ip.log
+IPv4_ipv6.log
+IPv4_ospf.log
+IPv4_tcp.log
+IPv4_udp.log
+IPv4_resultados.log
