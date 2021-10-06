@@ -75,10 +75,10 @@ void *sniffer(void *datos){
         write(tuberia, &size_trama, sizeof(size_trama));
         write(tuberia, &buffer, size_trama);
     }
-    //close(sock_fd);
+    
     /*desactivando modo promiscuo*/
     modo_promiscuo(sock_fd,param->interfaz,0);
-
+    close(sock_fd);
     close(tuberia);
     pthread_exit(0);
 }

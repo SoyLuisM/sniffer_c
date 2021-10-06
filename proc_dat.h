@@ -5,6 +5,10 @@
 #include<unistd.h>
 #include<stdlib.h>
 #include <linux/if_ether.h>
+#include <linux/ip.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
 
 void guardar_trama(FILE *fichero,struct ethhdr *eth,int long_dat){
     /*imprime mac destino*/
@@ -24,7 +28,8 @@ void guardar_cabezera(FILE *fichero){
     fprintf(fichero,"MAC destino\t\t\tMAC origen\t\t\tprotocolo\tlong trama\tcarga util\n");
 }
 
-/**/
+/*Las siguientes funciones son para manipular la estructura donde se guardan
+los contadores de las direcciones mac*/
 struct n_mac *crear_nodo(struct ethhdr *eth){
     struct n_mac *nuevo= (struct n_mac *)malloc(sizeof(struct n_mac));
     nuevo->mac_origen[0]=eth->h_source[0];
@@ -76,6 +81,7 @@ void guardar_lista(FILE *archivo,struct n_mac *lista){
 
 /*funcion principal del procesador de datos*/
 void *procesar_datos(void *datos){
+    struct sockaddr_in source,dest;
     struct n_mac *lista=NULL;
 
     FILE *fichero,*fichero2,*fichero3,*fichero4,*fichero5;
@@ -91,6 +97,7 @@ void *procesar_datos(void *datos){
     /*long_dat es la trama leida de la tuberia, size_trama el tamaño de la trama en revfrom*/
     int tuberia, long_dat,size_trama;
     struct ethhdr *eth;
+    struct iphdr *eth2;
     char buffer[MAX_LINES];
     tuberia = open("/tmp/mi_fifo",O_RDONLY);
 
@@ -108,6 +115,12 @@ void *procesar_datos(void *datos){
         /*leo la trama y convierto al tipo necesario*/
         long_dat=read(tuberia, &buffer, size_trama);
         eth = (struct ethhdr *)buffer;
+        eth2 = (struct iphdr *)(buffer+(sizeof(struct ethhdr)));
+
+        source.sin_addr.s_addr = eth2->saddr;
+        dest.sin_addr.s_addr = eth2->daddr;
+        printf("%s\t",inet_ntoa(dest.sin_addr));
+        printf("%s\n",inet_ntoa(source.sin_addr));
         //IPv4
         if(htons(eth->h_proto) ==0x0800){
             IPv4++;
